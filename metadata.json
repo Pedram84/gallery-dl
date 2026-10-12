@@ -1,0 +1,6 @@
+{
+  "name": "gallery-dl",
+  "description": "Native Android image and gallery downloader powered by the embedded gallery-dl Python engine",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">gallery-dl</string>
+    <string name="nav_downloader">Downloader</string>
+    <string name="nav_jobs">Downloads</string>
+    <string name="nav_extractors">Sites</string>
+    <string name="nav_config">Config</string>
+    <string name="nav_terminal">Terminal</string>
+    <string name="btn_download">Download</string>
+    <string name="btn_extract">Extract URLs</string>
+    <string name="btn_clear_logs">Clear Console</string>
+    <string name="status_running">Running</string>
+    <string name="status_completed">Completed</string>
+    <string name="status_failed">Failed</string>
+    <string name="status_idle">Ready</string>
+</resources>
