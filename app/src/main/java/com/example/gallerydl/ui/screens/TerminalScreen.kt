@@ -22,6 +22,8 @@ import com.example.gallerydl.engine.GalleryDlEngine
 import com.example.gallerydl.engine.ProcessOutputCallback
 import com.example.gallerydl.ui.components.TerminalView
 import com.example.gallerydl.ui.theme.*
+import com.example.gallerydl.util.CliParseException
+import com.example.gallerydl.util.CliTokenizer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -47,8 +49,13 @@ fun TerminalScreen(
 
     fun runCommand(cmd: String) {
         if (cmd.isBlank()) return
-        val rawParts = cmd.trim().split("\\s+".toRegex())
-        val args = if (rawParts.firstOrNull() == "gallery-dl") rawParts.drop(1) else rawParts
+        val args = try {
+            CliTokenizer.tokenize(cmd, stripExecutablePrefix = true)
+        } catch (e: CliParseException) {
+            logs = logs + LogEntry(text = "$ $cmd", isError = false)
+            logs = logs + LogEntry(text = "Argument syntax error: ${e.message}", isError = true)
+            return
+        }
 
         isExecuting = true
         val startLog = LogEntry(text = "$ $cmd", isError = false)

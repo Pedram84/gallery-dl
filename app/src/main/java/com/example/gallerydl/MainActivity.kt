@@ -38,12 +38,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        GalleryDlEngine.registerContext(this)
         jobRepository = JobRepository(this)
         configRepository = ConfigRepository(this)
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            GalleryDlEngine.init(applicationContext)
-        }
 
         // Handle shared URL if opened from browser or share sheet
         var sharedUrl: String? = null
@@ -74,6 +71,14 @@ fun MainApp(
     var versionText by remember { mutableStateOf("1.32.16") }
     val currentRunningJobId by jobRepository.currentRunningJobId.collectAsState()
     val isRunning = currentRunningJobId != null
+
+    LaunchedEffect(Unit) {
+        try {
+            versionText = GalleryDlEngine.getVersion()
+        } catch (e: Exception) {
+            versionText = "Error: ${e.message}"
+        }
+    }
 
     // Handle back button: return to Downloader tab if currently on other tabs
     BackHandler(enabled = currentTab != AppTab.DOWNLOADER) {

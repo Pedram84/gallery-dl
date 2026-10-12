@@ -18,31 +18,50 @@ object GalleryDlEngine {
     private const val TAG = "GalleryDlEngine"
     private var isInitialized = false
     private val executionMutex = Mutex()
+    private var appContext: Context? = null
+    var initError: String? = null
+        private set
 
     @Synchronized
-    fun init(context: Context) {
+    fun registerContext(context: Context) {
+        appContext = context.applicationContext
+    }
+
+    @Synchronized
+    fun init(context: Context? = null) {
         if (!isInitialized) {
-            if (!Python.isStarted()) {
-                Python.start(AndroidPlatform(context.applicationContext))
+            val ctx = context?.applicationContext ?: appContext
+            if (ctx != null) {
+                try {
+                    if (!Python.isStarted()) {
+                        Python.start(AndroidPlatform(ctx))
+                    }
+                    isInitialized = true
+                    initError = null
+                    Log.d(TAG, "Python runtime initialized successfully.")
+                } catch (e: Exception) {
+                    initError = e.message
+                    Log.e(TAG, "Python runtime initialization failed", e)
+                    throw e
+                }
+            } else {
+                throw IllegalStateException("Cannot initialize Python: No Context registered.")
             }
-            isInitialized = true
-            Log.d(TAG, "Python runtime initialized successfully.")
         }
     }
 
     private fun getRunnerModule(): PyObject {
+        init()
+        if (initError != null) {
+            throw IllegalStateException("Python initialization failed previously: $initError")
+        }
         val python = Python.getInstance()
         return python.getModule("gallery_runner")
     }
 
     suspend fun getVersion(): String = withContext(Dispatchers.IO) {
-        try {
-            val runner = getRunnerModule()
-            runner.callAttr("get_version").toString()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to get version", e)
-            "1.32.16 (Error: ${e.message})"
-        }
+        val runner = getRunnerModule()
+        runner.callAttr("get_version").toString()
     }
 
     suspend fun getHelpText(): String = withContext(Dispatchers.IO) {

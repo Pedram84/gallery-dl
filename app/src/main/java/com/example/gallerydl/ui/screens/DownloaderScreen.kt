@@ -37,6 +37,8 @@ import com.example.gallerydl.data.repository.JobRepository
 import com.example.gallerydl.service.DownloadService
 import com.example.gallerydl.ui.components.TerminalView
 import com.example.gallerydl.ui.theme.*
+import com.example.gallerydl.util.CliParseException
+import com.example.gallerydl.util.CliTokenizer
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -357,12 +359,17 @@ fun DownloaderScreen(
 
                     val argsList = mutableListOf<String>()
                     optionToggles.filter { it.isEnabled }.forEach { toggle ->
-                        val parts = toggle.flag.split(" ")
+                        val parts = CliTokenizer.tokenize(toggle.flag, stripExecutablePrefix = false)
                         argsList.addAll(parts)
                     }
 
                     if (customArgsInput.isNotBlank()) {
-                        argsList.addAll(customArgsInput.trim().split("\\s+".toRegex()))
+                        try {
+                            argsList.addAll(CliTokenizer.tokenize(customArgsInput, stripExecutablePrefix = true))
+                        } catch (e: CliParseException) {
+                            Toast.makeText(context, "Argument error: ${e.message}", Toast.LENGTH_LONG).show()
+                            return@Button
+                        }
                     }
 
                     liveLogs = emptyList()
@@ -411,7 +418,12 @@ fun DownloaderScreen(
 
                     val argsList = mutableListOf<String>("-g")
                     if (customArgsInput.isNotBlank()) {
-                        argsList.addAll(customArgsInput.trim().split("\\s+".toRegex()))
+                        try {
+                            argsList.addAll(CliTokenizer.tokenize(customArgsInput, stripExecutablePrefix = true))
+                        } catch (e: CliParseException) {
+                            Toast.makeText(context, "Argument error: ${e.message}", Toast.LENGTH_LONG).show()
+                            return@OutlinedButton
+                        }
                     }
 
                     liveLogs = emptyList()

@@ -68,11 +68,26 @@ class DownloadService : Service {
         val url = intent?.getStringExtra(EXTRA_URL) ?: "Processing gallery..."
         val notification = buildNotification(url)
         try {
-            startForeground(NOTIFICATION_ID, notification)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(
+                    NOTIFICATION_ID,
+                    notification,
+                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                )
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
         } catch (e: Exception) {
             android.util.Log.w("DownloadService", "startForeground failed", e)
         }
         return START_NOT_STICKY
+    }
+
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        super.onTimeout(startId, fgsType)
+        android.util.Log.w("DownloadService", "Foreground service timed out by system (fgsType: $fgsType)")
+        stop(this)
     }
 
     private fun buildNotification(url: String): Notification {
