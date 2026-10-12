@@ -7,6 +7,8 @@ import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import com.example.gallerydl.data.models.ExtractorInfo
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -15,7 +17,9 @@ import java.io.File
 object GalleryDlEngine {
     private const val TAG = "GalleryDlEngine"
     private var isInitialized = false
+    private val executionMutex = Mutex()
 
+    @Synchronized
     fun init(context: Context) {
         if (!isInitialized) {
             if (!Python.isStarted()) {
@@ -93,15 +97,17 @@ object GalleryDlEngine {
         args: List<String>,
         outputCallback: ProcessOutputCallback
     ): Int = withContext(Dispatchers.IO) {
-        try {
-            val runner = getRunnerModule()
-            val pyArgs = args.toTypedArray()
-            val exitCodeObj = runner.callAttr("run_gallery_dl", pyArgs, outputCallback)
-            exitCodeObj.toInt()
-        } catch (e: Exception) {
-            Log.e(TAG, "Execution failure", e)
-            outputCallback.onStderr("Execution exception: ${e.localizedMessage}")
-            1
+        executionMutex.withLock {
+            try {
+                val runner = getRunnerModule()
+                val pyArgs = args.toTypedArray()
+                val exitCodeObj = runner.callAttr("run_gallery_dl", pyArgs, outputCallback)
+                exitCodeObj.toInt()
+            } catch (e: Exception) {
+                Log.e(TAG, "Execution failure", e)
+                outputCallback.onStderr("Execution exception: ${e.localizedMessage}")
+                1
+            }
         }
     }
 }

@@ -9,6 +9,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -36,9 +38,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        GalleryDlEngine.init(this)
         jobRepository = JobRepository(this)
         configRepository = ConfigRepository(this)
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            GalleryDlEngine.init(applicationContext)
+        }
 
         // Handle shared URL if opened from browser or share sheet
         var sharedUrl: String? = null
@@ -69,19 +74,6 @@ fun MainApp(
     var versionText by remember { mutableStateOf("1.32.16") }
     val currentRunningJobId by jobRepository.currentRunningJobId.collectAsState()
     val isRunning = currentRunningJobId != null
-
-    LaunchedEffect(Unit) {
-        versionText = GalleryDlEngine.getVersion()
-    }
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        val permissionLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestPermission()
-        ) { /* isGranted */ }
-        LaunchedEffect(Unit) {
-            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-    }
 
     // Handle back button: return to Downloader tab if currently on other tabs
     BackHandler(enabled = currentTab != AppTab.DOWNLOADER) {
